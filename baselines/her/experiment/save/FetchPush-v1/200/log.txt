@@ -1,0 +1,37 @@
+Logging to ./save/FetchPush-v1/200/
+T: 50
+_Q_lr: 0.001
+_action_l2: 1.0
+_batch_size: 256
+_buffer_size: 1000000
+_clip_obs: 200.0
+_hidden: 256
+_layers: 3
+_max_u: 1.0
+_network_class: baselines.her.actor_critic:ActorCritic
+_norm_clip: 5
+_norm_eps: 0.01
+_pi_lr: 0.001
+_polyak: 0.95
+_relative_goals: False
+_scope: ddpg
+ddpg_params: {'polyak': 0.95, 'Q_lr': 0.001, 'batch_size': 256, 'norm_eps': 0.01, 'clip_obs': 200.0, 'norm_clip': 5, 'hidden': 256, 'layers': 3, 'pi_lr': 0.001, 'buffer_size': 1000000, 'scope': 'ddpg', 'action_l2': 1.0, 'relative_goals': False, 'network_class': 'baselines.her.actor_critic:ActorCritic', 'max_u': 1.0}
+env_name: FetchPush-v1
+gamma: 0.98
+make_env: <function prepare_params.<locals>.make_env at 0x7f8814a2cbf8>
+n_batches: 40
+n_cycles: 50
+n_test_rollouts: 10
+noise_eps: 0.2
+random_eps: 0.3
+replay_k: 4
+replay_strategy: future
+rollout_batch_size: 2
+test_with_polyak: False
+
+*** Warning ***
+You are running HER with just a single MPI worker. This will work, but the experiments that we report in Plappert et al. (2018, https://arxiv.org/abs/1802.09464) were obtained with --num_cpu 19. This makes a significant difference and if you are looking to reproduce those results, be aware of this. Please also refer to https://github.com/openai/baselines/issues/314 for further details.
+****************
+
+Creating a DDPG agent with action space 4 x 1.0...
+Training...
