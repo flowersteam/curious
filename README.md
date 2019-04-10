@@ -4,7 +4,7 @@ Implementation of [CURIOUS: Intrinsically Motivated Multi-Task Multi-Goal Reinfo
 
 This implementation is based on the [OpenAI baseline](https://github.com/openai/baselines) implementation of [Hindisght Experience Replay](https://arxiv.org/abs/1707.01495) and [Deep Deterministic Policy Gradient](https://arxiv.org/abs/1509.02971) (included in this repo).
 
-This implementation requires the installation of the gym_flowers module, which overrides gym to enable the use of custom environments such as the one we use in this paper (Multi-Task Multi-Goal Fetch Arm).
+This implementation requires the installation of the [gym_flowers](https://github.com/flowersteam/gym_flowers) module, which overrides gym to enable the use of custom environments such as the one we use in this paper (Multi-Task Multi-Goal Fetch Arm).
 
 To run an experiment, run:
 
