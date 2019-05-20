@@ -1,6 +1,10 @@
-import click
-import numpy as np
+import os
 import pickle
+import json
+import argparse
+import numpy as np
+
+os.environ['LD_LIBRARY_PATH']+=':'+os.environ['HOME']+'/.mujoco/mjpro150/bin:'
 
 from baselines import logger
 from baselines.common import set_global_seeds
@@ -8,12 +12,13 @@ import baselines.her.experiment.config as config
 from baselines.her.rollout import RolloutWorker
 
 
-@click.command()
-@click.argument('policy_file', type=str)
-@click.option('--seed', type=int, default=0)
-@click.option('--n_test_rollouts', type=int, default=10)
-@click.option('--render', type=int, default=1)
-def main(policy_file, seed, n_test_rollouts, render):
+
+PATH = '/home/flowers/Desktop/Scratch/modular_her_baseline/baselines/her/experiment/plafrim_results/MultiTaskFetchArm4-v3/380' + '/'
+POLICY_FILE = PATH + 'policy_300.pkl'
+PARAMS_FILE = PATH + 'params.json'
+
+
+def play(policy_file, seed, n_test_rollouts, render):
     set_global_seeds(seed)
 
     # Load policy.
@@ -21,22 +26,33 @@ def main(policy_file, seed, n_test_rollouts, render):
         policy = pickle.load(f)
     env_name = policy.info['env_name']
 
-    # Prepare params.
-    params = config.DEFAULT_PARAMS
-    if env_name in config.DEFAULT_ENV_PARAMS:
-        params.update(config.DEFAULT_ENV_PARAMS[env_name])  # merge env-specific parameters in
+    # Load params
+    with open(PARAMS_FILE) as json_file:
+        params = json.load(json_file)
+
     params['env_name'] = env_name
+
     params = config.prepare_params(params)
     config.log_params(params, logger=logger)
+
+    structure = params['structure']
+    task_selection = params['task_selection']
+    goal_selection = params['goal_selection']
 
     dims = config.configure_dims(params)
 
     eval_params = {
         'exploit': True,
         'use_target_net': params['test_with_polyak'],
+        'use_demo_states': False,
         'compute_Q': True,
-        'rollout_batch_size': 1,
-        'render': bool(render),
+        'T': params['T'],
+        'structure': structure,
+        'task_selection': task_selection,
+        'goal_selection': goal_selection,
+        'queue_length': params['queue_length'],
+        'eval': True,
+        'render': render
     }
 
     for name in ['T', 'gamma', 'noise_eps', 'random_eps']:
@@ -57,4 +73,10 @@ def main(policy_file, seed, n_test_rollouts, render):
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--policy_file', type=str, default=POLICY_FILE)
+    parser.add_argument('--seed', type=int, default=int(np.random.randint(1e6)))
+    parser.add_argument('--n_test_rollouts', type=int, default=30)
+    parser.add_argument('--render', type=int, default=1)
+    kwargs = vars(parser.parse_args())
+    play(**kwargs)

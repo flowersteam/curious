@@ -4,11 +4,10 @@ import sys
 import importlib
 import inspect
 import functools
-
 import tensorflow as tf
 import numpy as np
-
 from baselines.common import tf_util as U
+from baselines.common.mpi_moments import mpi_moments
 
 
 def store_args(method):
@@ -71,6 +70,61 @@ def nn(input, layers_sizes, reuse=None, flatten=False, name=""):
         input = tf.reshape(input, [-1])
     return input
 
+def nn_modular_her(input_state, input_goal, layers_sizes, reuse=None, flatten=False, name=""):
+    """Creates a simple neural network
+    """
+    i=0
+    size = layers_sizes[0]
+    activation = tf.nn.relu if i < len(layers_sizes) - 1 else None
+    input1 = tf.layers.dense(inputs=input_state,
+                             units=size,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                             reuse=reuse,
+                             name=name + '_' + str(i)+'_state')
+    # do not use bias for goal layer
+    input2 = tf.layers.dense(inputs=input_goal,
+                             units=size,
+                             use_bias=False,
+                             kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                             reuse=reuse,
+                             name=name + '_' + str(i)+'_goal')
+    input = tf.add(input1, input2)
+    if activation:
+        input = activation(input)
+
+    for i, size in enumerate(layers_sizes[1:]):
+        activation = tf.nn.relu if i < len(layers_sizes[1:]) - 1 else None
+        input = tf.layers.dense(inputs=input,
+                                units=size,
+                                kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                                reuse=reuse,
+                                name=name + '_' + str(i+1))
+        if activation:
+            input = activation(input)
+    if flatten:
+        assert layers_sizes[-1] == 1
+        input = tf.reshape(input, [-1])
+    return input
+
+def find_save_path(dir, trial_id):
+    """
+    Create a directory to save results and arguments. Adds 100 to the trial id if a directory already exists.
+
+    Params
+    ------
+    - dir (str)
+        Main saving directory
+    - trial_id (int)
+        Trial identifier
+    """
+    i=0
+    while True:
+        save_dir = dir+str(trial_id+i*100)+'/'
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+            break
+        i+=1
+    return save_dir
 
 def install_mpi_excepthook():
     import sys
@@ -84,6 +138,12 @@ def install_mpi_excepthook():
         MPI.COMM_WORLD.Abort()
     sys.excepthook = new_hook
 
+def mpi_average(value):
+    if value == []:
+        value = [0.]
+    if not isinstance(value, list):
+        value = [value]
+    return mpi_moments(np.array(value))[0]
 
 def mpi_fork(n, extra_mpi_args=[]):
     """Re-launches the current script with workers
